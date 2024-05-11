@@ -8,8 +8,8 @@ folders = ['VR', 'Desktop']
 participantsPerGroup = 23
 
 # Check if results.csv exists and delete it if it does
-if os.path.exists('results.csv'):
-    os.remove('results.csv')
+if os.path.exists('combined_results.csv'):
+    os.remove('combined_results.csv')
 
 # Process the csv files in each folder
 for folder in folders:
@@ -58,9 +58,9 @@ for folder in folders:
             combined_df['Participant ID'] = combined_df['Participant ID'] + participantsPerGroup  
 
     # Append the combined DataFrame to the results.csv file
-    if os.path.isfile('results.csv') and os.path.getsize('results.csv') > 0:
+    if os.path.isfile('combined_results.csv') and os.path.getsize('combined_results.csv') > 0:
         # If the file exists and is not empty, write without header and leading newline
-        combined_df.to_csv('results.csv', mode='a', header=False, index=False)
+        combined_df.to_csv('combined_results.csv', mode='a', header=False, index=False)
     else:
         # If the file does not exist or is empty, write with header
-        combined_df.to_csv('results.csv', mode='a', header=True, index=False)
+        combined_df.to_csv('combined_results.csv', mode='a', header=True, index=False)
