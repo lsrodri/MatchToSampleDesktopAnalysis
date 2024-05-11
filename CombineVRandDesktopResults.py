@@ -3,7 +3,9 @@ import glob
 import os
 
 # Define the folders to process
-folders = ['Desktop', 'VR']
+folders = ['VR', 'Desktop']
+
+participantsPerGroup = 23
 
 # Check if results.csv exists and delete it if it does
 if os.path.exists('results.csv'):
@@ -50,6 +52,10 @@ for folder in folders:
 
     # Drop duplicates based on "Participant ID" and "Trial Number", keeping the first occurrence (latest row)
     combined_df.drop_duplicates(subset=['Participant ID', 'Trial Number'], keep='first', inplace=True)
+
+    # In order to get unique Participant IDs for each group, add the number of participants per group to the Participant ID for the Desktop group
+    if folder == 'Desktop':  # Check if the folder is 'Desktop'
+            combined_df['Participant ID'] = combined_df['Participant ID'] + participantsPerGroup  
 
     # Append the combined DataFrame to the results.csv file
     if os.path.isfile('results.csv') and os.path.getsize('results.csv') > 0:
