@@ -60,29 +60,37 @@ coef_summary_rt = model_rt.summary()
 print("\nCoefficients for Response Time:")
 print(coef_summary_rt)
 
-# ----------------- Interaction Plot -----------------
+# ----------------- Interaction Plots -----------------
+# Create a new figure with two subplots
+fig, axs = plt.subplots(1, 2, figsize=(10, 6))
 
 # Create an interaction plot for Correctness
-sns.catplot(x='Condition', y='Correctness', hue='Rendering', kind='point', data=df_grouped, ci=None)
+sns.pointplot(x='Condition', y='Correctness', hue='Rendering', data=df_grouped, ci=None, ax=axs[0])
 
-# Set plot labels and title
-# plt.title('Interaction Plot of Condition and Rendering on Correctness')
-plt.xlabel('Modality')
-plt.ylabel('Error Rate')
+# Set plot labels and title for the first plot
+axs[0].set_xlabel('Modality')
+axs[0].set_ylabel('Error Rate')
 
-# Show the plot
-# plt.show()
+# Modify the x-axis labels
+labels = ['Visual', 'Visuohaptic']
+axs[0].set_xticklabels(labels)
 
-# Create an interaction plot for Correctness
-sns.catplot(x='Condition', y='Reaction_Time', hue='Rendering', kind='point', data=df_grouped, ci=None)
+# Create an interaction plot for Response Time
+sns.pointplot(x='Condition', y='Reaction_Time', hue='Rendering', data=df_grouped, ci=None, ax=axs[1])
 
-# Set plot labels and title
-# plt.title('Interaction Plot of Condition and Rendering on Correctness')
-plt.xlabel('Modality')
-plt.ylabel('Error Rate')
+# Set plot labels and title for the second plot
+axs[1].set_xlabel('Modality')
+axs[1].set_ylabel('Response Time in Seconds')
 
-# Show the plot
-# plt.show()
+# Modify the x-axis labels
+axs[1] = plt.gca()
+axs[1].set_xticklabels(labels)
+
+# Adjust the layout of the figure
+plt.tight_layout()
+
+# Save the figure as a PDF
+plt.savefig('interaction_plots.pdf', format='pdf')
 
 # ----------------- Graphs for Response Time and Correctness -----------------
 
@@ -109,15 +117,19 @@ if p_val < 0.05:
                 xytext=(1, y_max), textcoords='data',
                 arrowprops=dict(arrowstyle="-", ec='#aaaaaa',
                                 connectionstyle="bar,fraction=0.2"))
-    ax.text(0.5, y_max + abs(y_max*0.05), "*", ha='center', va='bottom', color='k')
+    ax.text(0.5, y_max + abs(y_max*0.05), "*", ha='center', va='top', color='k')
 
 plt.title('Response Time by Rendering and Modality')
 plt.xlabel('Rendering and Modality')
 plt.ylabel('Response Time in Seconds')
 
+# Modify the x-axis labels
+labels = ['Visual (Desktop)', 'Visuohaptic (Desktop)', 'Visual (VR)', 'Visuohaptic (VR)']
+ax = plt.gca()
+ax.set_xticklabels(labels)
+
 plt.tight_layout()
-plt.savefig('response_time.pdf', format='pdf')
-# plt.show()
+plt.savefig('joint_response_time.pdf', format='pdf')
 
 # Create a single graph for Correctness
 fig, ax = plt.subplots(figsize=(12, 6))
@@ -145,7 +157,7 @@ if p_val_desktop < 0.05:
                 arrowprops=dict(arrowstyle="-", ec='#aaaaaa',
                                 connectionstyle="bar,fraction=0.2"))
     # Position the asterisk above the bar for Desktop Rendering
-    ax.text(0.5, annotation_position_desktop, "*", ha='center', va='bottom', color='k')
+    ax.text(0.5, annotation_position_desktop + 0.07, "*", ha='center', va='bottom', color='k')
 
 
 # Perform a t-test to check for significant difference for VR Rendering
@@ -168,7 +180,8 @@ if p_val_vr < 0.05:
                 arrowprops=dict(arrowstyle="-", ec='#aaaaaa',
                                 connectionstyle="bar,fraction=0.2"))
     # Position the asterisk above the bar for VR Rendering
-    ax.text(2.5, annotation_position_vr, "*", ha='center', va='bottom', color='k')
+    ax.text(2.5, annotation_position_vr + 0.07, "*", ha='center', va='bottom', color='k')
+    
 
 
 ax.set_ylim(bottom=-0.05, top=bar_height_desktop * 1.2)
@@ -177,6 +190,11 @@ plt.title('Error Rates by Rendering and Modality')
 plt.xlabel('Rendering and Modality')
 plt.ylabel('Error Rate')
 
+# Modify the x-axis labels
+labels = ['Visual (Desktop)', 'Visuohaptic (Desktop)', 'Visual (VR)', 'Visuohaptic (VR)']
+ax = plt.gca()
+ax.set_xticklabels(labels)
+
 plt.tight_layout()
-plt.savefig('num_errors.pdf', format='pdf')
+plt.savefig('joint_error_rate.pdf', format='pdf')
 plt.show()
