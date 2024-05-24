@@ -18,6 +18,8 @@ df = pd.read_csv('combined_results.csv')
 # Rename columns to remove spaces and special characters
 df.columns = df.columns.str.replace(' ', '_')
 
+df = df[df['Condition'].isin(['V', 'VH'])]
+
 # Data preprocessing
 # Convert Correctness to error rates (1 for error, 0 for correct)
 df['Error'] = df['Correctness'].apply(lambda x: 0 if x else 1)
