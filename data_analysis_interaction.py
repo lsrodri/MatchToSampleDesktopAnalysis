@@ -1,200 +1,128 @@
-import numpy as np
 import pandas as pd
+import statsmodels.formula.api as smf
 import seaborn as sns
 import matplotlib.pyplot as plt
-from scipy.stats import ttest_ind
+import pingouin as pg
+import warnings
+from matplotlib.backends.backend_pdf import PdfPages
 import statsmodels.api as sm
-from statsmodels.formula.api import ols
 
-# Set font type for PDF export
-plt.rcParams['pdf.fonttype'] = 42
-plt.rcParams['ps.fonttype'] = 42
+# Too many warnings from plotting
+warnings.filterwarnings('ignore')
 
-# Read the data
+# Load the data
 df = pd.read_csv('combined_results.csv')
 
-# Filter for only V and VH conditions
-df = df[df['Condition'].isin(['V', 'VH'])]
+# Rename columns to remove spaces and special characters
+df.columns = df.columns.str.replace(' ', '_')
 
-# Replace boolean correctness values with 0 and 1
-mapping = {False: 1, True: 0}
-df['Correctness'] = df['Correctness'].map(mapping)
+# Data preprocessing
+# Convert Correctness to error rates (1 for error, 0 for correct)
+df['Error'] = df['Correctness'].apply(lambda x: 0 if x else 1)
 
-# Group by Participant ID, Condition, and Rendering and calculate means
-df_grouped = df.groupby(['Participant ID', 'Condition', 'Rendering']).agg({'Correctness': 'mean', 'Reaction Time': 'mean'}).reset_index()
+# Convert relevant columns to categorical types
+df['Participant_ID'] = df['Participant_ID'].astype('category')
+df['Rendering'] = df['Rendering'].astype('category')
+df['Condition'] = df['Condition'].astype('category')
 
-# Rename the 'Reaction Time' column to 'Reaction_Time'
-df_grouped = df_grouped.rename(columns={'Reaction Time': 'Reaction_Time'})
+# Aggregate data to get mean error rate and mean response time per participant per condition and rendering type
+agg_data = df.groupby(['Participant_ID', 'Rendering', 'Condition'], observed=False).agg({'Error': 'mean', 'Reaction_Time': 'mean'}).reset_index()
 
-# ----------------- Two-way ANOVA for Correctness -----------------
+# Remove rows with NaN values in the Error column
+agg_data = agg_data.dropna(subset=['Error', 'Reaction_Time'])
 
-# Perform two-way ANOVA with interaction term for Correctness
-model_correctness = ols('Correctness ~ C(Condition) * C(Rendering)', data=df_grouped).fit()
-anova_correctness = sm.stats.anova_lm(model_correctness, typ=2)
+# Check the cleaned aggregated data
+print("\nCleaned aggregated data:")
+print(agg_data.head())
 
-# Print ANOVA table for Correctness
-print("ANOVA for Correctness:")
-print(anova_correctness)
+# Perform the Shapiro-Wilk test for the 'Error' column
+normality_test_error = pg.normality(agg_data['Error'], method='shapiro')
+print(normality_test_error)
 
-# Perform Coefficients analysis for Correctness
-coef_summary_correctness = model_correctness.summary()
+# Perform the Shapiro-Wilk test for the 'Reaction_Time' column
+normality_test_reaction_time = pg.normality(agg_data['Reaction_Time'], method='shapiro')
+print(normality_test_reaction_time)
 
-# Print Coefficients analysis for Correctness
-print("\nCoefficients for Correctness:")
-print(coef_summary_correctness)
+# Fit a Linear Mixed Model for Error Rates with specified optimizers
+error_model = smf.mixedlm("Error ~ Rendering * Condition", agg_data, groups=agg_data["Participant_ID"], re_formula="~Condition")
+error_fit = error_model.fit(method='nm', maxiter=1000, full_output=True)  # Nelder-Mead
+if not error_fit.converged:
+    error_fit = error_model.fit(method='bfgs', maxiter=1000, full_output=True)  # BFGS
+print(error_fit.summary())
 
-# ----------------- Two-way ANOVA for Response Time -----------------
+# Fit a Linear Mixed Model for Reaction Times with specified optimizers
+reaction_time_model = smf.mixedlm("Reaction_Time ~ Rendering * Condition", agg_data, groups=agg_data["Participant_ID"], re_formula="~Condition")
+reaction_time_fit = reaction_time_model.fit(method='nm', maxiter=1000, full_output=True)  # Nelder-Mead
+if not reaction_time_fit.converged:
+    reaction_time_fit = reaction_time_model.fit(method='bfgs', maxiter=1000, full_output=True)  # BFGS
+print(reaction_time_fit.summary())
 
-# Perform two-way ANOVA with interaction term for Response Time
-model_rt = ols('Reaction_Time ~ C(Condition) * C(Rendering)', data=df_grouped).fit()
-anova_rt = sm.stats.anova_lm(model_rt, typ=2)
+# Diagnostics: Residual plots and random effects
 
-# Print ANOVA table for Response Time
-print("\nANOVA for Response Time:")
-print(anova_rt)
+# Residual plot for error model
+fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+sm.qqplot(error_fit.resid, line='s', ax=ax[0])
+ax[0].set_title('Q-Q plot of residuals for error model')
+ax[0].set_xlabel('Theoretical Quantiles')
+ax[0].set_ylabel('Standardized Residuals')
 
-# Perform Coefficients analysis for Response Time
-coef_summary_rt = model_rt.summary()
+# Residual plot for reaction time model
+sm.qqplot(reaction_time_fit.resid, line='s', ax=ax[1])
+ax[1].set_title('Q-Q plot of residuals for reaction time model')
+ax[1].set_xlabel('Theoretical Quantiles')
+ax[1].set_ylabel('Standardized Residuals')
+plt.tight_layout()
+plt.show()
 
-# Print Coefficients analysis for Response Time
-print("\nCoefficients for Response Time:")
-print(coef_summary_rt)
+# Random effects for error model
+print("\nRandom effects for error model:")
+print(error_fit.random_effects)
 
-# ----------------- Interaction Plots -----------------
-# Create a new figure with two subplots
-fig, axs = plt.subplots(1, 2, figsize=(10, 6))
+# Random effects for reaction time model
+print("\nRandom effects for reaction time model:")
+print(reaction_time_fit.random_effects)
 
-# Create an interaction plot for Correctness
-sns.pointplot(x='Condition', y='Correctness', hue='Rendering', data=df_grouped, ci=None, ax=axs[0])
+# Create a new PDF file for plots
+pdf_pages = PdfPages('interaction_plots.pdf')
 
-# Set plot labels and title for the first plot
-axs[0].set_xlabel('Modality')
+# Create a new figure with two subplots side by side
+fig, axs = plt.subplots(1, 2, figsize=(15, 6))
+
+# Visualization of the interaction effects on Error Rates
+sns.pointplot(x='Condition', y='Error', hue='Rendering', data=agg_data, dodge=True, markers=['o', 's'], capsize=0.1, errwidth=1, palette='colorblind', ax=axs[0])
+axs[0].set_title('Interaction between Rendering and Modality on Error Rates')
+axs[0].set_xlabel('Modality', labelpad=15)
 axs[0].set_ylabel('Error Rate')
+axs[0].legend(title='Rendering')
+axs[0].set_xticklabels(['Haptic', 'Visual', 'Visuohaptic'])
 
-# Modify the x-axis labels
-labels = ['Visual', 'Visuohaptic']
-axs[0].set_xticklabels(labels)
-
-# Create an interaction plot for Response Time
-sns.pointplot(x='Condition', y='Reaction_Time', hue='Rendering', data=df_grouped, ci=None, ax=axs[1])
-
-# Set plot labels and title for the second plot
-axs[1].set_xlabel('Modality')
-axs[1].set_ylabel('Response Time in Seconds')
-
-# Modify the x-axis labels
-axs[1] = plt.gca()
-axs[1].set_xticklabels(labels)
+# Visualization of the interaction effects on Reaction Times
+sns.pointplot(x='Condition', y='Reaction_Time', hue='Rendering', data=agg_data, dodge=True, markers=['o', 's'], capsize=0.1, errwidth=1, palette='colorblind', ax=axs[1])
+axs[1].set_title('Interaction between Rendering and Modality on Response Time')
+axs[1].set_xlabel('Modality', labelpad=15)
+axs[1].set_ylabel('Response Time')
+axs[1].legend(title='Rendering')
+axs[1].set_xticklabels(['Haptic', 'Visual', 'Visuohaptic'])
 
 # Adjust the layout of the figure
 plt.tight_layout()
 
-# Save the figure as a PDF
-plt.savefig('interaction_plots.pdf', format='pdf')
+# Save the current figure to the PDF file
+pdf_pages.savefig(fig)
 
-# ----------------- Graphs for Response Time and Correctness -----------------
+# Close the PDF file
+pdf_pages.close()
 
-# Create a new column that combines 'Rendering' and 'Condition'
-df_grouped['Rendering_Condition'] = df_grouped['Rendering'] + ' ' + df_grouped['Condition']
+# Calculate mean error rate and mean response time per condition per rendering
+mean_data = agg_data.groupby(['Rendering', 'Condition']).agg({'Error': 'mean', 'Reaction_Time': 'mean'}).reset_index()
 
-# Sort the data so that the conditions are grouped together for each rendering
-df_grouped = df_grouped.sort_values('Rendering_Condition')
+# Print mean error rate and mean response time per condition per rendering
+print("\nMean Error Rate and Mean Response Time per Condition per Rendering:")
+print(mean_data)
 
-# Create a single graph for Reaction Time
-fig, ax = plt.subplots(figsize=(12, 6))
-
-sns.boxplot(x="Rendering_Condition", y="Reaction_Time", data=df_grouped, palette="colorblind", ax=ax)
-
-# Perform a t-test to check for significant difference
-group1 = df[(df['Rendering'] == 'Desktop') & (df['Condition'] == 'V')]['Reaction Time']
-group2 = df[(df['Rendering'] == 'Desktop') & (df['Condition'] == 'VH')]['Reaction Time']
-t_stat, p_val = ttest_ind(group1, group2)
-
-# Add a horizontal bar with an asterisk if the difference is significant
-if p_val < 0.05:
-    y_max = max(max(group1), max(group2))
-    ax.annotate("", xy=(0, y_max), xycoords='data',
-                xytext=(1, y_max), textcoords='data',
-                arrowprops=dict(arrowstyle="-", ec='#aaaaaa',
-                                connectionstyle="bar,fraction=0.2"))
-    ax.text(0.5, y_max + abs(y_max*0.05), "*", ha='center', va='top', color='k')
-
-plt.title('Response Time by Rendering and Modality')
-plt.xlabel('Rendering and Modality')
-plt.ylabel('Response Time in Seconds')
-
-# Modify the x-axis labels
-labels = ['Visual (Desktop)', 'Visuohaptic (Desktop)', 'Visual (VR)', 'Visuohaptic (VR)']
-ax = plt.gca()
-ax.set_xticklabels(labels)
-
-plt.tight_layout()
-plt.savefig('joint_response_time.pdf', format='pdf')
-
-# Create a single graph for Correctness
-fig, ax = plt.subplots(figsize=(12, 6))
-
-sns.boxplot(x="Rendering_Condition", y="Correctness", data=df_grouped, palette="colorblind", ax=ax)
-
-# Perform a t-test to check for significant difference for Desktop Rendering
-group1_desktop = df[(df['Rendering'] == 'Desktop') & (df['Condition'] == 'V')]['Correctness']
-group2_desktop = df[(df['Rendering'] == 'Desktop') & (df['Condition'] == 'VH')]['Correctness']
-t_stat_desktop, p_val_desktop = ttest_ind(group1_desktop, group2_desktop)
-
-# Add a horizontal bar with an asterisk if the difference is significant for Desktop Rendering
-if p_val_desktop < 0.05:
-    print('Significant difference in error rates between Desktop Visual and Desktop Visuohaptic')
-    y_max_desktop = max(max(group1_desktop), max(group2_desktop))
-    # Set the maximum y value as the height of the bar for Desktop Rendering
-    bar_height_desktop = ax.get_ylim()[1]
-    # Manually adjust the annotation position based on data range
-    annotation_position_desktop = max(group1_desktop.mean(), group2_desktop.mean()) + abs(max(group1_desktop.mean(), group2_desktop.mean()) * 0.05) + 0.16
-    # If the annotation is too close to the top of the plot, adjust its position
-    if annotation_position_desktop > 0.95 * bar_height_desktop:
-        annotation_position_desktop = 0.9 * bar_height_desktop
-    ax.annotate("", xy=(0, annotation_position_desktop), xycoords='data',
-                xytext=(1, annotation_position_desktop), textcoords='data',
-                arrowprops=dict(arrowstyle="-", ec='#aaaaaa',
-                                connectionstyle="bar,fraction=0.2"))
-    # Position the asterisk above the bar for Desktop Rendering
-    ax.text(0.5, annotation_position_desktop + 0.07, "*", ha='center', va='bottom', color='k')
-
-
-# Perform a t-test to check for significant difference for VR Rendering
-group1_vr = df[(df['Rendering'] == 'VR') & (df['Condition'] == 'V')]['Correctness']
-group2_vr = df[(df['Rendering'] == 'VR') & (df['Condition'] == 'VH')]['Correctness']
-t_stat_vr, p_val_vr = ttest_ind(group1_vr, group2_vr)
-
-# Add a horizontal bar with an asterisk if the difference is significant for VR Rendering
-if p_val_vr < 0.05:
-    y_max_vr = max(max(group1_vr), max(group2_vr))
-    # Set the maximum y value as the height of the bar for VR Rendering
-    bar_height_vr = ax.get_ylim()[1]
-    # Manually adjust the annotation position based on data range
-    annotation_position_vr = max(group1_vr.mean(), group2_vr.mean()) + abs(max(group1_vr.mean(), group2_vr.mean()) * 0.05) + 0.225
-    # If the annotation is too close to the top of the plot, adjust its position
-    # if annotation_position_vr > 0.95 * bar_height_vr:
-    #     annotation_position_vr = 0.9 * bar_height_vr
-    ax.annotate("", xy=(2, annotation_position_vr), xycoords='data',
-                xytext=(3, annotation_position_vr), textcoords='data',
-                arrowprops=dict(arrowstyle="-", ec='#aaaaaa',
-                                connectionstyle="bar,fraction=0.2"))
-    # Position the asterisk above the bar for VR Rendering
-    ax.text(2.5, annotation_position_vr + 0.07, "*", ha='center', va='bottom', color='k')
-    
-
-
-ax.set_ylim(bottom=-0.05, top=bar_height_desktop * 1.2)
-
-plt.title('Error Rates by Rendering and Modality')
-plt.xlabel('Rendering and Modality')
-plt.ylabel('Error Rate')
-
-# Modify the x-axis labels
-labels = ['Visual (Desktop)', 'Visuohaptic (Desktop)', 'Visual (VR)', 'Visuohaptic (VR)']
-ax = plt.gca()
-ax.set_xticklabels(labels)
-
-plt.tight_layout()
-plt.savefig('joint_error_rate.pdf', format='pdf')
-plt.show()
+# Generate Paragraphs for the Results Section
+for idx, row in mean_data.iterrows():
+    print(f"\nFor {row['Rendering']} rendering:")
+    print(f"In the {row['Condition']} condition:")
+    print(f"- Mean error rate: {row['Error']:.2f}")
+    print(f"- Mean response time: {row['Reaction_Time']:.2f} seconds")
