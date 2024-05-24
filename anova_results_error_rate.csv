@@ -1,4 +1,4 @@
-"","Term","Df","Df.res","Sum Sq","Sum Sq.res","F value","Pr(>F)"
-"Immersion","Immersion",1,117,7310.88571428572,147326.147619048,5.8059865298537,0.0175306143576203
-"Modality","Modality",2,117,69430.8182733255,85043.3166666667,47.7604005604541,6.85312126954441e-16
-"Immersion:Modality","Immersion:Modality",2,117,2454.83031358884,152302.357142857,0.942911035908956,0.392431715202257
+"Term","Df","Df.res","Sum Sq","Sum Sq.res","F value","Pr(>F)","Condition","Metric"
+"Immersion",1,117,7310.89,147326.15,5.81,0.02,"Combined","Error Rate"
+"Modality",2,117,69430.82,85043.32,47.76,0,"Combined","Error Rate"
+"Immersion:Modality",2,117,2454.83,152302.36,0.94,0.39,"Combined","Error Rate"
