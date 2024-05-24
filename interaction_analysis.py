@@ -92,18 +92,18 @@ fig, axs = plt.subplots(1, 2, figsize=(15, 6))
 
 # Visualization of the interaction effects on Error Rates
 sns.pointplot(x='Condition', y='Error', hue='Rendering', data=agg_data, dodge=True, markers=['o', 's'], capsize=0.1, errwidth=1, palette='colorblind', ax=axs[0])
-axs[0].set_title('Interaction between Rendering and Modality on Error Rates')
+axs[0].set_title('Interaction between Immersion and Modality on Error Rates')
 axs[0].set_xlabel('Modality', labelpad=15)
 axs[0].set_ylabel('Error Rate')
-axs[0].legend(title='Rendering')
+axs[0].legend(title='Immersion')
 axs[0].set_xticklabels(['Haptic', 'Visual', 'Visuohaptic'])
 
 # Visualization of the interaction effects on Reaction Times
 sns.pointplot(x='Condition', y='Reaction_Time', hue='Rendering', data=agg_data, dodge=True, markers=['o', 's'], capsize=0.1, errwidth=1, palette='colorblind', ax=axs[1])
-axs[1].set_title('Interaction between Rendering and Modality on Response Time')
+axs[1].set_title('Interaction between Immersion and Modality on Response Time')
 axs[1].set_xlabel('Modality', labelpad=15)
 axs[1].set_ylabel('Response Time')
-axs[1].legend(title='Rendering')
+axs[1].legend(title='Immersion')
 axs[1].set_xticklabels(['Haptic', 'Visual', 'Visuohaptic'])
 
 # Adjust the layout of the figure
