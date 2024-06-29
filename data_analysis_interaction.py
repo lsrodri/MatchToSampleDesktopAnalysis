@@ -93,7 +93,9 @@ sns.pointplot(x='Condition', y='Error', hue='Rendering', data=agg_data, dodge=Tr
 axs[0].set_title('Interaction between Display Environment and Sensory Modality on Error Rates')
 axs[0].set_xlabel('Sensory Modality', labelpad=15)
 axs[0].set_ylabel('Error Rate')
-axs[0].legend(title='Display Environment')
+# axs[0].legend(title='Display Environment')
+handles, labels = axs[0].get_legend_handles_labels()
+axs[0].legend(handles=handles, labels=['Projected Surface', 'Virtual Reality'], title='Display Environment')
 axs[0].set_xticklabels(['Haptic', 'Visual', 'Visuohaptic'])
 
 offset = 0.02
@@ -109,7 +111,9 @@ sns.pointplot(x='Condition', y='Reaction_Time', hue='Rendering', data=agg_data, 
 axs[1].set_title('Interaction between Display Environment and Sensory Modality on Response Time')
 axs[1].set_xlabel('Sensory Modality', labelpad=15)
 axs[1].set_ylabel('Response Time')
-axs[1].legend(title='Display Environment')
+# axs[1].legend(title='Display Environment')
+axs[1].legend(handles=handles, labels=['Projected Surface', 'Virtual Reality'], title='Display Environment')
+axs[1].set_xticklabels(['Haptic', 'Visual', 'Visuohaptic'])
 axs[1].set_xticklabels(['Haptic', 'Visual', 'Visuohaptic'])
 
 axs[1].set_ylim(6.4, 12.4)
