@@ -103,12 +103,12 @@ for i, cond1 in enumerate(vr_conditions):
                 max_val = df_grouped['Correctness'].max()
                 add_significance_bar(ax, offset + i, offset + j, max_val + 0.06 * (j-i), '*')
 
-plt.title('Error Rates by Rendering and Modality')
-plt.xlabel('Rendering and Modality')
+plt.title('Error Rates by Display Environment and Sensory Modality')
+plt.xlabel('Display Environment and Sensory Modality')
 plt.ylabel('Error Rate')
 
 # Modify the x-axis labels
-labels = ['Haptic (Desktop)', 'Visual (Desktop)', 'Visuohaptic (Desktop)', 'Haptic (VR)', 'Visual (VR)', 'Visuohaptic (VR)']
+labels = ['Haptic (Surface)', 'Visual (Surface)', 'Visuohaptic (Surface)', 'Haptic (VR)', 'Visual (VR)', 'Visuohaptic (VR)']
 ax.set_xticklabels(labels)
 
 # plt.ylim(-0.5, 0.8)
@@ -157,12 +157,12 @@ for i, cond1 in enumerate(vr_conditions):
                 plt.plot([x1, x1, x3, x3], [y, y+0.25, y+0.25, y], lw=1.5, c=col)
                 plt.text((x1+x3)*.5, y+0.25, "*", ha='center', va='bottom', color=col)
 
-plt.title('Response Time by Rendering and Modality')
-plt.xlabel('Rendering and Modality')
+plt.title('Response Time by Display Environment and Sensory Modality')
+plt.xlabel('Display Environment and Sensory Modality')
 plt.ylabel('Response Time in Seconds')
 
 # Modify the x-axis labels
-labels = ['Haptic (Desktop)', 'Visual (Desktop)', 'Visuohaptic (Desktop)', 'Haptic (VR)', 'Visual (VR)', 'Visuohaptic (VR)']
+labels = ['Haptic (Surface)', 'Visual (Surface)', 'Visuohaptic (Surface)', 'Haptic (VR)', 'Visual (VR)', 'Visuohaptic (VR)']
 ax.set_xticklabels(labels)
 
 plt.tight_layout()
