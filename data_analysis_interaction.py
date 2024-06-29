@@ -72,7 +72,7 @@ ax[1].set_title('Q-Q plot of residuals for reaction time model')
 ax[1].set_xlabel('Theoretical Quantiles')
 ax[1].set_ylabel('Standardized Residuals')
 plt.tight_layout()
-plt.show()
+# plt.show()
 
 # Random effects for error model
 print("\nRandom effects for error model:")
@@ -86,23 +86,41 @@ print(reaction_time_fit.random_effects)
 pdf_pages = PdfPages('interaction_plots.pdf')
 
 # Create a new figure with two subplots side by side
-fig, axs = plt.subplots(1, 2, figsize=(15, 6))
+fig, axs = plt.subplots(1, 2, figsize=(16, 7))
 
 # Visualization of the interaction effects on Error Rates
 sns.pointplot(x='Condition', y='Error', hue='Rendering', data=agg_data, dodge=True, markers=['o', 's'], capsize=0.1, errwidth=1, palette='colorblind', ax=axs[0])
-axs[0].set_title('Interaction between Rendering and Modality on Error Rates')
-axs[0].set_xlabel('Modality', labelpad=15)
+axs[0].set_title('Interaction between Display Environment and Sensory Modality on Error Rates')
+axs[0].set_xlabel('Sensory Modality', labelpad=15)
 axs[0].set_ylabel('Error Rate')
-axs[0].legend(title='Rendering')
+axs[0].legend(title='Display Environment')
 axs[0].set_xticklabels(['Haptic', 'Visual', 'Visuohaptic'])
+
+offset = 0.02
+
+# Add significance annotations for Error Rates
+# Visual
+axs[0].text(1 + offset, 0.303, '*', ha='center', fontsize=15)
+# Visuohaptic
+axs[0].text(2 + offset, 0.247, '*', ha='center', fontsize=15)
 
 # Visualization of the interaction effects on Reaction Times
 sns.pointplot(x='Condition', y='Reaction_Time', hue='Rendering', data=agg_data, dodge=True, markers=['o', 's'], capsize=0.1, errwidth=1, palette='colorblind', ax=axs[1])
-axs[1].set_title('Interaction between Rendering and Modality on Response Time')
-axs[1].set_xlabel('Modality', labelpad=15)
+axs[1].set_title('Interaction between Display Environment and Sensory Modality on Response Time')
+axs[1].set_xlabel('Sensory Modality', labelpad=15)
 axs[1].set_ylabel('Response Time')
-axs[1].legend(title='Rendering')
+axs[1].legend(title='Display Environment')
 axs[1].set_xticklabels(['Haptic', 'Visual', 'Visuohaptic'])
+
+axs[1].set_ylim(6.4, 12.4)
+
+# Add significance annotations for Reaction Times 
+# Haptic
+axs[1].text(0 + offset, 12.075, '*', ha='center', fontsize=15)
+# Visual
+axs[1].text(1 + offset, 10.815, '*', ha='center', fontsize=15)
+# Visuohaptic
+axs[1].text(2 + offset, 10.71, '*', ha='center', fontsize=15)
 
 # Adjust the layout of the figure
 plt.tight_layout()
@@ -117,7 +135,7 @@ pdf_pages.close()
 mean_data = agg_data.groupby(['Rendering', 'Condition']).agg({'Error': 'mean', 'Reaction_Time': 'mean'}).reset_index()
 
 # Print mean error rate and mean response time per condition per rendering
-print("\nMean Error Rate and Mean Response Time per Condition per Rendering:")
+print("\nMean Error Rate and Mean Response Time per Condition per Environment:")
 print(mean_data)
 
 # Generate Paragraphs for the Results Section
